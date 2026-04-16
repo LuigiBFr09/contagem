@@ -1,0 +1,241 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Contagem</title>
+    <style>
+        body, html {
+            margin: 0;
+            padding: 0;
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            background-color: #05010a;
+            font-family: 'Montserrat', sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            color: white;
+        }
+
+        /* --- Fundo Animado --- */
+        #canvas-particles {
+            position: absolute;
+            top: 0;
+            left: 0;
+            z-index: 1;
+        }
+
+        .fog {
+            position: absolute;
+            width: 200%;
+            height: 100%;
+            background: url('https://raw.githubusercontent.com/atloomer/atloomer.github.io/master/img/fog.png') repeat-x;
+            background-size: contain;
+            opacity: 0.12;
+            z-index: 2;
+            bottom: 0;
+            animation: drift 80s linear infinite;
+            pointer-events: none;
+        }
+
+        /* --- Imagens Flutuantes Maiores --- */
+        .floating-img {
+            position: absolute;
+            z-index: 3;
+            opacity: 0.25; /* Levemente mais transparentes por serem maiores */
+            filter: blur(1px) drop-shadow(0 0 15px rgba(138, 43, 226, 0.4));
+            pointer-events: none;
+            animation: float-around 25s ease-in-out infinite alternate;
+        }
+
+        @keyframes float-around {
+    0% { transform: translate(0, 0) rotate(0deg) scale(1); }
+    33% { transform: translate(100px, -150px) rotate(15deg) scale(1.1); } /* Movimento mais amplo */
+    66% { transform: translate(-80px, 100px) rotate(-10deg) scale(0.9); }
+    100% { transform: translate(0, 0) rotate(0deg) scale(1); }
+}
+
+        @keyframes drift {
+            from { transform: translateX(0); }
+            to { transform: translateX(-50%); }
+        }
+
+        /* --- Conteúdo Principal --- */
+        .content {
+            position: relative;
+            z-index: 10;
+            text-align: center;
+        }
+
+        .logo {
+            width: 780px;
+            height: auto;
+            margin-bottom: 60px;
+            filter: drop-shadow(0 0 25px rgba(138, 43, 226, 0.6));
+        }
+
+        .timer-container {
+            display: flex;
+            gap: 60px;
+            justify-content: center;
+        }
+
+        .time-segment {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            min-width: 120px;
+        }
+
+        .time-value {
+            font-size: 5rem;
+            font-weight: 900;
+            background: linear-gradient(180deg, #ffffff 40%, #8b5cf6 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            line-height: 1;
+        }
+
+        .time-label {
+            font-size: 0.8rem;
+            text-transform: uppercase;
+            letter-spacing: 6px;
+            color: #a855f7;
+            margin-top: 15px;
+        }
+
+        @media (max-width: 768px) {
+            .timer-container { gap: 15px; }
+            .time-value { font-size: 2.5rem; }
+            .time-segment { min-width: 70px; }
+            .logo { width: 280px; }
+        }
+    </style>
+</head>
+<body>
+
+    <canvas id="canvas-particles"></canvas>
+    <div class="fog"></div>
+    <div id="floating-assets"></div>
+
+    <div class="content">
+        <img src="server.png" alt="Logo" class="logo">
+        
+        <div class="timer-container">
+            <div class="time-segment">
+                <div id="days" class="time-value">00</div>
+                <div class="time-label">Dias</div>
+            </div>
+            <div class="time-segment">
+                <div id="hours" class="time-value">00</div>
+                <div class="time-label">Horas</div>
+            </div>
+            <div class="time-segment">
+                <div id="minutes" class="time-value">00</div>
+                <div class="time-label">Min</div>
+            </div>
+            <div class="time-segment">
+                <div id="seconds" class="time-value">00</div>
+                <div class="time-label">Seg</div>
+            </div>
+        </div>
+    </div>
+
+    <audio id="bg-music" loop autoplay>
+        <source src="musica.mp3" type="audio/mpeg">
+    </audio>
+
+    <script>
+        // --- Configuração: Menos imagens, tamanho maior ---
+        const imageSources = ['espada.webp', 'tnt.png', 'pero.webp', 'pero.webp'];
+        const assetsContainer = document.getElementById('floating-assets');
+
+        function createFloatingImages() {
+    // Definimos posições específicas para espalhar bem (Cantos e laterais)
+    const positions = [
+        { left: '5vw', top: '10vh' },  // Superior Esquerdo
+        { left: '80vw', top: '15vh' }, // Superior Direito
+        { left: '40vw', top: '70vh' }  // Inferior Centro
+    ];
+
+    for (let i = 0; i < 3; i++) {
+        const img = document.createElement('img');
+        img.src = imageSources[i % imageSources.length];
+        img.className = 'floating-img';
+        
+        // Aplica as posições espalhadas
+        img.style.left = positions[i].left;
+        img.style.top = positions[i].top;
+        
+        const size = Math.random() * 60 + 130 + 'px'; 
+        img.style.width = size;
+        
+        // VELOCIDADE: Diminuído de 20-25s para 8-12s (Ficou bem mais rápido)
+        img.style.animationDuration = (8 + (i * 2)) + 's'; 
+        
+        assetsContainer.appendChild(img);
+    }
+}
+        createFloatingImages();
+
+        // --- Partículas ---
+        const canvas = document.getElementById('canvas-particles');
+        const ctx = canvas.getContext('2d');
+        let particles = [];
+        function resize() { canvas.width = window.innerWidth; canvas.height = window.innerHeight; }
+        window.addEventListener('resize', resize);
+        resize();
+
+        class Particle {
+            constructor() { this.reset(); }
+            reset() {
+                this.x = Math.random() * canvas.width;
+                this.y = Math.random() * canvas.height;
+                this.size = Math.random() * 2 + 0.5;
+                this.speedX = Math.random() * 0.3 - 0.15;
+                this.speedY = Math.random() * 0.3 - 0.15;
+                this.opacity = Math.random() * 0.4;
+            }
+            update() {
+                this.x += this.speedX; this.y += this.speedY;
+                if (this.x > canvas.width || this.x < 0 || this.y > canvas.height || this.y < 0) this.reset();
+            }
+            draw() {
+                ctx.fillStyle = `rgba(168, 85, 247, ${this.opacity})`;
+                ctx.beginPath(); ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2); ctx.fill();
+            }
+        }
+        for (let i = 0; i < 60; i++) particles.push(new Particle());
+        function animate() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            particles.forEach(p => { p.update(); p.draw(); });
+            requestAnimationFrame(animate);
+        }
+        animate();
+
+        // --- Timer ---
+        const target = new Date("July 5, 2026 00:00:00").getTime();
+        function updateTimer() {
+            const now = new Date().getTime();
+            const d = target - now;
+            if (d < 0) return;
+            document.getElementById('days').innerText = String(Math.floor(d / (1000 * 60 * 60 * 24))).padStart(2, '0');
+            document.getElementById('hours').innerText = String(Math.floor((d % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60))).padStart(2, '0');
+            document.getElementById('minutes').innerText = String(Math.floor((d % (1000 * 60 * 60)) / (1000 * 60))).padStart(2, '0');
+            document.getElementById('seconds').innerText = String(Math.floor((d % (1000 * 60)) / 1000)).padStart(2, '0');
+        }
+        setInterval(updateTimer, 1000);
+        updateTimer();
+
+        // --- Áudio ---
+        const audio = document.getElementById("bg-music");
+        const playMusic = () => audio.play();
+        audio.volume = 0.5;
+        document.addEventListener('mousedown', playMusic, { once: true });
+        document.addEventListener('touchstart', playMusic, { once: true });
+        document.addEventListener('keydown', playMusic, { once: true });
+    </script>
+</body>
+</html>
