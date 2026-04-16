@@ -40,57 +40,61 @@
             pointer-events: none;
         }
 
-        /* --- Imagens Flutuantes Maiores --- */
+        /* --- Imagens Flutuantes --- */
         .floating-img {
             position: absolute;
             z-index: 3;
-            opacity: 0.25; /* Levemente mais transparentes por serem maiores */
+            opacity: 0.25;
             filter: blur(1px) drop-shadow(0 0 15px rgba(138, 43, 226, 0.4));
             pointer-events: none;
             animation: float-around 25s ease-in-out infinite alternate;
         }
 
         @keyframes float-around {
-    0% { transform: translate(0, 0) rotate(0deg) scale(1); }
-    33% { transform: translate(100px, -150px) rotate(15deg) scale(1.1); } /* Movimento mais amplo */
-    66% { transform: translate(-80px, 100px) rotate(-10deg) scale(0.9); }
-    100% { transform: translate(0, 0) rotate(0deg) scale(1); }
-}
+            0% { transform: translate(0, 0) rotate(0deg) scale(1); }
+            33% { transform: translate(60px, -100px) rotate(15deg) scale(1.1); }
+            66% { transform: translate(-50px, 80px) rotate(-10deg) scale(0.9); }
+            100% { transform: translate(0, 0) rotate(0deg) scale(1); }
+        }
 
         @keyframes drift {
             from { transform: translateX(0); }
             to { transform: translateX(-50%); }
         }
 
-        /* --- Conteúdo Principal --- */
+        /* --- Conteúdo Principal (Ajustes de Responsividade) --- */
         .content {
             position: relative;
             z-index: 10;
             text-align: center;
+            width: 90%; /* Ocupa quase toda a largura em telas pequenas */
+            max-width: 1200px;
         }
 
         .logo {
-            width: 780px;
+            width: 100%;
+            max-width: 780px; /* Tamanho original no desktop */
             height: auto;
-            margin-bottom: 60px;
+            margin-bottom: 5vh; /* Margem baseada na altura da tela */
             filter: drop-shadow(0 0 25px rgba(138, 43, 226, 0.6));
         }
 
         .timer-container {
             display: flex;
-            gap: 60px;
+            gap: 2vw; /* Gap adaptável à largura da tela */
             justify-content: center;
+            flex-wrap: wrap; /* Permite quebrar linha se o celular for muito pequeno */
         }
 
         .time-segment {
             display: flex;
             flex-direction: column;
             align-items: center;
-            min-width: 120px;
+            min-width: 80px;
         }
 
         .time-value {
-            font-size: 5rem;
+            font-size: clamp(2.5rem, 8vw, 5rem); /* Tamanho dinâmico entre 2.5 e 5rem */
             font-weight: 900;
             background: linear-gradient(180deg, #ffffff 40%, #8b5cf6 100%);
             -webkit-background-clip: text;
@@ -99,18 +103,46 @@
         }
 
         .time-label {
-            font-size: 0.8rem;
+            font-size: clamp(0.6rem, 1.5vw, 0.8rem);
             text-transform: uppercase;
-            letter-spacing: 6px;
+            letter-spacing: 4px;
             color: #a855f7;
-            margin-top: 15px;
+            margin-top: 10px;
         }
 
+        /* --- Media Queries Específicas --- */
+
+        /* Tablets e Telas Médias */
+        @media (max-width: 1024px) {
+            .logo { max-width: 500px; }
+            .timer-container { gap: 40px; }
+        }
+
+        /* Celulares Grandes / Médios */
         @media (max-width: 768px) {
-            .timer-container { gap: 15px; }
-            .time-value { font-size: 2.5rem; }
-            .time-segment { min-width: 70px; }
-            .logo { width: 280px; }
+            .logo { max-width: 350px; }
+            .timer-container { gap: 20px; }
+            .time-segment { min-width: 60px; }
+        }
+
+        /* Celulares Pequenos (Vertical) */
+        @media (max-width: 480px) {
+            .logo { max-width: 280px; }
+            .timer-container { 
+                display: grid; 
+                grid-template-columns: 1fr 1fr; /* 2x2 no celular pequeno */
+                gap: 20px;
+            }
+            .time-value { font-size: 3rem; }
+            .time-label { letter-spacing: 2px; }
+            .floating-img { width: 80px !important; } /* Diminui imagens flutuantes no celular */
+        }
+
+        /* Ajuste para telas horizontais curtas (celular deitado) */
+        @media (max-height: 500px) {
+            .logo { width: 150px; margin-bottom: 10px; }
+            .time-value { font-size: 2rem; }
+            .content { padding-top: 20px; }
         }
     </style>
 </head>
@@ -143,49 +175,55 @@
         </div>
     </div>
 
-    <audio id="bg-music" loop autoplay>
+    <audio id="bg-music" loop>
         <source src="musica.mp3" type="audio/mpeg">
     </audio>
 
     <script>
-        // --- Configuração: Menos imagens, tamanho maior ---
         const imageSources = ['espada.webp', 'tnt.png', 'pero.webp', 'pero.webp'];
         const assetsContainer = document.getElementById('floating-assets');
 
         function createFloatingImages() {
-    // Definimos posições específicas para espalhar bem (Cantos e laterais)
-    const positions = [
-        { left: '5vw', top: '10vh' },  // Superior Esquerdo
-        { left: '80vw', top: '15vh' }, // Superior Direito
-        { left: '40vw', top: '70vh' }  // Inferior Centro
-    ];
+            const isMobile = window.innerWidth < 768;
+            const positions = [
+                { left: '5vw', top: '10vh' },
+                { left: '80vw', top: '15vh' },
+                { left: '40vw', top: '75vh' }
+            ];
 
-    for (let i = 0; i < 3; i++) {
-        const img = document.createElement('img');
-        img.src = imageSources[i % imageSources.length];
-        img.className = 'floating-img';
-        
-        // Aplica as posições espalhadas
-        img.style.left = positions[i].left;
-        img.style.top = positions[i].top;
-        
-        const size = Math.random() * 60 + 130 + 'px'; 
-        img.style.width = size;
-        
-        // VELOCIDADE: Diminuído de 20-25s para 8-12s (Ficou bem mais rápido)
-        img.style.animationDuration = (8 + (i * 2)) + 's'; 
-        
-        assetsContainer.appendChild(img);
-    }
-}
+            for (let i = 0; i < 3; i++) {
+                const img = document.createElement('img');
+                img.src = imageSources[i % imageSources.length];
+                img.className = 'floating-img';
+                
+                img.style.left = positions[i].left;
+                img.style.top = positions[i].top;
+                
+                // Tamanho adaptativo para as imagens flutuantes
+                const baseSize = isMobile ? 80 : 130;
+                const size = Math.random() * 40 + baseSize + 'px'; 
+                img.style.width = size;
+                
+                img.style.animationDuration = (8 + (i * 2)) + 's'; 
+                assetsContainer.appendChild(img);
+            }
+        }
         createFloatingImages();
 
         // --- Partículas ---
         const canvas = document.getElementById('canvas-particles');
         const ctx = canvas.getContext('2d');
         let particles = [];
-        function resize() { canvas.width = window.innerWidth; canvas.height = window.innerHeight; }
-        window.addEventListener('resize', resize);
+        function resize() { 
+            canvas.width = window.innerWidth; 
+            canvas.height = window.innerHeight; 
+        }
+        window.addEventListener('resize', () => {
+            resize();
+            // Limpa e recria imagens ao rotacionar tela se necessário
+            assetsContainer.innerHTML = '';
+            createFloatingImages();
+        });
         resize();
 
         class Particle {
@@ -220,7 +258,10 @@
         function updateTimer() {
             const now = new Date().getTime();
             const d = target - now;
-            if (d < 0) return;
+            if (d < 0) {
+                document.querySelector('.timer-container').innerHTML = "<div class='time-value'>JÁ LANÇADO!</div>";
+                return;
+            }
             document.getElementById('days').innerText = String(Math.floor(d / (1000 * 60 * 60 * 24))).padStart(2, '0');
             document.getElementById('hours').innerText = String(Math.floor((d % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60))).padStart(2, '0');
             document.getElementById('minutes').innerText = String(Math.floor((d % (1000 * 60 * 60)) / (1000 * 60))).padStart(2, '0');
@@ -231,11 +272,12 @@
 
         // --- Áudio ---
         const audio = document.getElementById("bg-music");
-        const playMusic = () => audio.play();
-        audio.volume = 0.3;
+        audio.volume = 0.5;
+        const playMusic = () => {
+            audio.play().catch(e => console.log("Autoplay bloqueado pelo browser"));
+        };
         document.addEventListener('mousedown', playMusic, { once: true });
         document.addEventListener('touchstart', playMusic, { once: true });
-        document.addEventListener('keydown', playMusic, { once: true });
     </script>
 </body>
 </html>
